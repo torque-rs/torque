@@ -1,3 +1,5 @@
+extern crate self as torque_ecs;
+
 mod component;
 mod entity;
 mod entity_id;
@@ -12,7 +14,7 @@ pub use self::{
 	entity::{Entity, EntityMethods},
 	entity_id::EntityId,
 	entity_ref::EntityRef,
-	extends::{Cast, Extends},
+	extends::Extends,
 	system::System,
 	system_error::SystemError,
 	weak_entity_ref::WeakEntityRef,

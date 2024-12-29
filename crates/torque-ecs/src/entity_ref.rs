@@ -1,6 +1,6 @@
 use std::marker::PhantomData;
 
-use crate::{Component, Entity, EntityId, EntityMethods, System, SystemError, WeakEntityRef};
+use crate::{Entity, EntityId, EntityMethods, Extends, System, WeakEntityRef};
 
 #[derive(Debug)]
 pub struct EntityRef<E>
@@ -25,15 +25,11 @@ where
 			_phantom: PhantomData,
 		}
 	}
-
-	pub fn downgrade(self) -> WeakEntityRef<E> {
-		WeakEntityRef::new(self.system.clone(), self.id)
-	}
 }
 
-impl<E> EntityMethods for EntityRef<E>
+impl<E> EntityMethods<E> for EntityRef<E>
 where
-	E: Entity,
+	E: Entity + 'static,
 {
 	fn system(&self) -> &System {
 		&self.system

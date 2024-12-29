@@ -1,27 +1,18 @@
-use std::{any::TypeId, sync::LazyLock};
 use test_log::test;
 
-use crate::{Component, Entity, EntityMethods};
+use crate::{Component, Entity, EntityMethods, EntityRef};
 
 use super::System;
 
-#[derive(Clone)]
+#[derive(Clone, Entity)]
 struct TestEntity;
 
-static TYPE_ID: LazyLock<TypeId> = LazyLock::new(TypeId::of::<TestEntity>);
-static TYPE_IDS: LazyLock<[TypeId; 1]> = LazyLock::new(|| [*TYPE_ID]);
+#[derive(Clone, Entity)]
+#[extends(TestEntity)]
+struct TestEntity2;
 
-impl Entity for TestEntity {
-	const NAME: &'static str = "TestEntity";
-
-	fn type_id() -> TypeId {
-		*TYPE_ID
-	}
-
-	fn type_ids() -> &'static [TypeId] {
-		&*TYPE_IDS
-	}
-}
+#[derive(Clone, Entity)]
+struct TestEntity3;
 
 struct TestComponent(usize);
 
@@ -45,4 +36,14 @@ fn system_create_and_set() {
 	let entity = system.create::<TestEntity>();
 
 	entity.set::<TestComponent>(TestComponent(0));
+}
+
+#[test]
+fn entity_cast() {
+	let system = System::default();
+
+	let entity = system.create::<TestEntity2>();
+
+	let entity: EntityRef<TestEntity> = entity.upcast::<TestEntity>();
+	let entity = entity.downcast::<TestEntity2>();
 }

@@ -3,7 +3,10 @@ use torque_style::{Layout, MaxSize, MinSize, Resolve, Size, Style};
 
 use crate::{layout, Element, Parent};
 
-pub trait NodeMethods: EntityMethods {
+pub trait NodeMethods<E>: EntityMethods<E>
+where
+	E: Entity + 'static,
+{
 	fn parent(&self) -> Option<WeakEntityRef<Element>> {
 		self.get_or_default::<Parent>()
 	}
@@ -42,4 +45,4 @@ pub trait NodeMethods: EntityMethods {
 #[derive(Clone, Entity)]
 pub struct Node;
 
-impl NodeMethods for EntityRef<Node> {}
+impl NodeMethods<Node> for EntityRef<Node> {}

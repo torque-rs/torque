@@ -3,7 +3,7 @@ mod entity;
 
 use proc_macro::TokenStream;
 
-#[proc_macro_derive(Entity, attributes(parents))]
+#[proc_macro_derive(Entity, attributes(extends))]
 pub fn derive_entity(tokens: TokenStream) -> TokenStream {
 	match entity::derive(tokens.into()) {
 		Ok(tokens) => tokens,

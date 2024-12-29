@@ -1,15 +1,33 @@
 use std::any::TypeId;
 
-use crate::{Component, EntityId, EntityRef, System, SystemError};
+use crate::{Component, EntityId, EntityRef, Extends, System, SystemError, WeakEntityRef};
 
 pub trait Entity {
 	const NAME: &'static str;
+	type Base;
 
 	fn type_id() -> TypeId;
 	fn type_ids() -> &'static [TypeId];
 }
 
-pub trait EntityMethods {
+impl Entity for () {
+	const NAME: &'static str = "()";
+
+	type Base = Self;
+
+	fn type_id() -> TypeId {
+		TypeId::of::<()>()
+	}
+
+	fn type_ids() -> &'static [TypeId] {
+		&[]
+	}
+}
+
+pub trait EntityMethods<E>: Sized
+where
+	E: Entity + 'static,
+{
 	fn system(&self) -> &System;
 
 	fn id(&self) -> EntityId;
@@ -115,19 +133,32 @@ pub trait EntityMethods {
 	}
 
 	#[inline]
-	fn cast<E2>(&self) -> EntityRef<E2>
-	where
-		E2: Entity + 'static,
-	{
-		self.system().entity_cast::<E2>(self.id())
+	fn downgrade(self) -> WeakEntityRef<E> {
+		WeakEntityRef::new(self.system().clone(), self.id())
 	}
 
 	#[inline]
-	fn try_cast<E2>(&self) -> Result<EntityRef<E2>, SystemError>
+	fn upcast<Base>(&self) -> EntityRef<Base>
 	where
-		E2: Entity + 'static,
+		Base: Entity + 'static,
+		E: Extends<Base>,
 	{
-		self.system().try_entity_cast::<E2>(self.id())
+		self.system().entity_cast(self.id())
+	}
+
+	#[inline]
+	fn downcast<Sub>(&self) -> EntityRef<Sub>
+	where
+		Sub: Entity + 'static,
+	{
+		self.system().entity_cast(self.id())
+	}
+
+	fn try_downcast<Sub>(&self) -> Result<EntityRef<Sub>, SystemError>
+	where
+		Sub: Entity + 'static,
+	{
+		self.system().try_entity_cast(self.id())
 	}
 
 	#[inline]

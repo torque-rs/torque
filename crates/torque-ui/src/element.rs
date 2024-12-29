@@ -3,11 +3,14 @@ mod tests;
 
 use std::collections::VecDeque;
 
-use torque_ecs::{Entity, EntityMethods, EntityRef, Extends};
+use torque_ecs::{Entity, EntityMethods, EntityRef};
 
 use crate::{Children, Node, NodeMethods, Parent};
 
-pub trait ElementMethods: NodeMethods {
+pub trait ElementMethods<E>: NodeMethods<E>
+where
+	E: Entity + 'static,
+{
 	fn element_self(&self) -> EntityRef<Element>;
 
 	fn with_children<R>(&self, f: impl FnOnce(&VecDeque<EntityRef<Node>>) -> R) -> R {
@@ -50,14 +53,12 @@ pub trait ElementMethods: NodeMethods {
 }
 
 #[derive(Clone, Entity)]
-#[parents(Node)]
+#[extends(Node)]
 pub struct Element;
 
-impl Extends<Node> for Element {}
+impl NodeMethods<Element> for EntityRef<Element> {}
 
-impl NodeMethods for EntityRef<Element> {}
-
-impl ElementMethods for EntityRef<Element> {
+impl ElementMethods<Element> for EntityRef<Element> {
 	fn element_self(&self) -> EntityRef<Element> {
 		self.clone()
 	}

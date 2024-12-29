@@ -19,7 +19,7 @@ pub fn append_child() {
 	let parent = system.create::<Element>();
 	let child = system.create::<Element>();
 
-	parent.append_child(child.cast());
+	parent.append_child(child.upcast());
 
 	parent.with_children(print_children);
 }
@@ -31,8 +31,8 @@ pub fn append_child2() {
 	let child1 = system.create::<Element>();
 	let child2 = system.create::<Element>();
 
-	parent.append_child(child1.cast());
-	parent.append_child(child2.cast());
+	parent.append_child(child1.upcast());
+	parent.append_child(child2.upcast());
 
 	parent.with_children(print_children);
 }
