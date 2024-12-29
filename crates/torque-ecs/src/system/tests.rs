@@ -1,7 +1,7 @@
 use std::{any::TypeId, sync::LazyLock};
 use test_log::test;
 
-use crate::{Component, Entity, EntityRefMethods};
+use crate::{Component, Entity, EntityMethods};
 
 use super::System;
 
