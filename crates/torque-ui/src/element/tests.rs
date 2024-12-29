@@ -1,7 +1,7 @@
 use std::collections::VecDeque;
 
 use test_log::test;
-use torque_ecs::{EntityRef, EntityRefMethods, System};
+use torque_ecs::{EntityMethods, EntityRef, System};
 
 use crate::Node;
 

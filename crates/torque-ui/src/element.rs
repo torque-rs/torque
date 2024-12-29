@@ -3,7 +3,7 @@ mod tests;
 
 use std::collections::VecDeque;
 
-use torque_ecs::{Entity, EntityRef, EntityRefMethods, Extends};
+use torque_ecs::{Entity, EntityMethods, EntityRef, Extends};
 
 use crate::{Children, Node, NodeMethods, Parent};
 

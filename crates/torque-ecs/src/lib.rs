@@ -9,9 +9,9 @@ mod weak_entity_ref;
 
 pub use self::{
 	component::Component,
-	entity::Entity,
+	entity::{Entity, EntityMethods},
 	entity_id::EntityId,
-	entity_ref::{EntityRef, EntityRefMethods},
+	entity_ref::EntityRef,
 	extends::{Cast, Extends},
 	system::System,
 	system_error::SystemError,

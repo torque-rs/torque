@@ -1,9 +1,9 @@
-use torque_ecs::{Entity, EntityRef, EntityRefMethods, WeakEntityRef};
+use torque_ecs::{Entity, EntityMethods, EntityRef, WeakEntityRef};
 use torque_style::{Layout, MaxSize, MinSize, Resolve, Size, Style};
 
 use crate::{layout, Element, Parent};
 
-pub trait NodeMethods: EntityRefMethods {
+pub trait NodeMethods: EntityMethods {
 	fn parent(&self) -> Option<WeakEntityRef<Element>> {
 		self.get_or_default::<Parent>()
 	}
