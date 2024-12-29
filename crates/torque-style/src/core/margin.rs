@@ -1,24 +1,9 @@
-use crate::Property;
+use torque_geometry::Rect;
 
-use super::LengthPercentAuto;
+use crate::{LengthPercentAuto, Property};
 
-#[derive(Clone, Copy, Debug, Default)]
-pub struct Margin {
-	left: LengthPercentAuto,
-	right: LengthPercentAuto,
-	top: LengthPercentAuto,
-	bottom: LengthPercentAuto,
-}
+pub struct Margin;
 
-impl Property for Margin {}
-
-impl From<Margin> for taffy::Rect<taffy::LengthPercentageAuto> {
-	fn from(value: Margin) -> Self {
-		Self {
-			left: value.left.into(),
-			right: value.right.into(),
-			top: value.top.into(),
-			bottom: value.bottom.into(),
-		}
-	}
+impl Property for Margin {
+	type Value = Rect<LengthPercentAuto>;
 }

@@ -1,13 +1,22 @@
 pub mod core;
 
+mod length_percent;
+mod length_percent_auto;
 mod property;
+mod resolve;
 
 use std::any::{Any, TypeId};
 
 use fnv::FnvHashMap;
 use torque_ecs::Component;
 
-pub use self::{core::*, property::Property};
+pub use self::{
+	core::*,
+	length_percent::LengthPercent,
+	length_percent_auto::LengthPercentAuto,
+	property::Property,
+	resolve::{Resolve, ResolveOrZero},
+};
 
 #[derive(Debug, Default)]
 pub struct Style {
@@ -15,7 +24,7 @@ pub struct Style {
 }
 
 impl Style {
-	pub fn get<P>(&self) -> Option<P>
+	pub fn get<P>(&self) -> Option<P::Value>
 	where
 		P: Property + 'static,
 	{
@@ -28,21 +37,22 @@ impl Style {
 			.cloned()
 	}
 
-	pub fn get_or<P>(&self, default: P) -> P
+	pub fn get_or<P>(&self, default: P::Value) -> P::Value
 	where
 		P: Property + 'static,
 	{
 		self.get::<P>().unwrap_or(default)
 	}
 
-	pub fn get_or_default<P>(&self) -> P
+	pub fn get_or_default<P>(&self) -> P::Value
 	where
-		P: Property + Default + 'static,
+		P: Property + 'static,
+		P::Value: Default,
 	{
 		self.get::<P>().unwrap_or_default()
 	}
 
-	pub fn set<P>(&mut self, value: P) -> &mut Self
+	pub fn set<P>(&mut self, value: P::Value) -> &mut Self
 	where
 		P: Property + 'static,
 	{
@@ -55,5 +65,7 @@ impl Style {
 }
 
 impl Component for Style {
+	type Value = Self;
+
 	const NAME: &str = "Style";
 }

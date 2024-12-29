@@ -23,6 +23,10 @@ swc_ecma_parser = "6.0.1"
 swc_ecma_transforms_react = "6.0.0"
 taffy = "0.7.1"
 thiserror = "2.0.8"
+torque-ecs = { version = "0.1.0", path = "../torque-ecs" }
+torque-geometry = { version = "0.1.0", path = "../torque-geometry" }
+torque-style = { version = "0.1.0", path = "../torque-style" }
+torque-ui = { version = "0.1.0", path = "../torque-ui" }
 v8.workspace = true
 wgpu = "23.0.1"
 winit = "0.30.5"

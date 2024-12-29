@@ -7,13 +7,6 @@ pub enum BoxSizing {
 	Content,
 }
 
-impl Property for BoxSizing {}
-
-impl From<BoxSizing> for taffy::BoxSizing {
-	fn from(value: BoxSizing) -> Self {
-		match value {
-			BoxSizing::Border => Self::BorderBox,
-			BoxSizing::Content => Self::ContentBox,
-		}
-	}
+impl Property for BoxSizing {
+	type Value = Self;
 }

@@ -1,24 +1,9 @@
-use crate::Property;
+use torque_geometry::Rect;
 
-use super::LengthPercent;
+use crate::{LengthPercent, Property};
 
-#[derive(Clone, Copy, Debug)]
-pub struct Border {
-	left: LengthPercent,
-	right: LengthPercent,
-	top: LengthPercent,
-	bottom: LengthPercent,
-}
+pub struct Border;
 
-impl Property for Border {}
-
-impl From<Border> for taffy::Rect<taffy::LengthPercentage> {
-	fn from(value: Border) -> Self {
-		Self {
-			left: value.left.into(),
-			right: value.right.into(),
-			top: value.top.into(),
-			bottom: value.bottom.into(),
-		}
-	}
+impl Property for Border {
+	type Value = Rect<LengthPercent>;
 }

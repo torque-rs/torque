@@ -1,4 +1,8 @@
 declare module "@torque-rs/ui" {
+	declare class Node {}
+
+	declare class Element extends Node {}
+
 	declare class Window {
 		private constructor();
 
@@ -6,5 +10,7 @@ declare module "@torque-rs/ui" {
 		title: string;
 
 		static create(render: () => JSX.Element): Promise<Window>;
+
+		createElement(): Element;
 	}
 }

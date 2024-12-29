@@ -3,7 +3,6 @@ mod compiler;
 mod console;
 mod jsx_runtime;
 mod runtime;
-pub mod style;
 pub mod ui;
 
 pub(crate) use self::{
@@ -12,3 +11,7 @@ pub(crate) use self::{
 };
 
 pub use self::application::{Application, Handle};
+
+pub use torque_geometry as geometry;
+pub use torque_style as style;
+pub use torque_ui as ui;

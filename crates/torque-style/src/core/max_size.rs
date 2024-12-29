@@ -1,20 +1,9 @@
-use crate::Property;
+use torque_geometry::Size;
 
-use super::LengthPercentAuto;
+use crate::{LengthPercentAuto, Property};
 
-#[derive(Clone, Copy, Debug, Default)]
-pub struct MaxSize {
-	pub width: LengthPercentAuto,
-	pub height: LengthPercentAuto,
-}
+pub struct MaxSize;
 
-impl Property for MaxSize {}
-
-impl From<MaxSize> for taffy::Size<taffy::Dimension> {
-	fn from(value: MaxSize) -> Self {
-		Self {
-			width: value.width.into(),
-			height: value.height.into(),
-		}
-	}
+impl Property for MaxSize {
+	type Value = Size<LengthPercentAuto>;
 }

@@ -1,151 +1,206 @@
-use crate::{Component, Entity, EntityId, System, SystemError};
+use std::marker::PhantomData;
+
+use crate::{Component, Entity, EntityId, System, SystemError, WeakEntityRef};
 
 #[derive(Debug)]
-pub struct EntityRef {
+pub struct EntityRef<E>
+where
+	E: Entity,
+{
 	pub system: System,
 	pub id: EntityId,
+	_phantom: PhantomData<E>,
 }
 
-impl EntityRef {
-	pub fn new(system: System, id: EntityId) -> Self {
-		Self { system, id }
+impl<E> EntityRef<E>
+where
+	E: Entity + 'static,
+{
+	pub(crate) fn new(system: System, id: EntityId) -> Self {
+		system.increment_ref(id);
+
+		Self {
+			system,
+			id,
+			_phantom: PhantomData,
+		}
 	}
 
+	pub fn downgrade(self) -> WeakEntityRef<E> {
+		WeakEntityRef::new(self.system.clone(), self.id)
+	}
+}
+
+pub trait EntityRefMethods {
+	fn system(&self) -> &System;
+
+	fn id(&self) -> EntityId;
+
 	#[inline]
-	pub fn get_or_default<C>(&self) -> C
+	fn get_or_default<C>(&self) -> C::Value
 	where
-		C: Component + Default + Clone + 'static,
+		C: Component + 'static,
+		C::Value: Clone + Default,
 	{
-		self.with_or_default::<C, C>(|component| component.clone())
+		self.with_or_default::<C, _>(|component| component.clone())
 	}
 
 	#[inline]
-	pub fn get<C>(&self) -> C
+	fn get<C>(&self) -> C::Value
 	where
-		C: Component + Clone + 'static,
+		C: Component + 'static,
+		C::Value: Clone,
 	{
-		self.with::<C, C>(|component| component.clone())
+		self.with::<C, _>(|component| component.clone())
 	}
 
 	#[inline]
-	pub fn set<C>(&self, value: C) -> &Self
+	fn set<C>(&self, value: C::Value) -> &Self
 	where
 		C: Component + 'static,
 	{
-		self.system.entity_set(self.id, value);
+		self.system().entity_set::<C>(self.id(), value);
 
 		self
 	}
 
 	#[inline]
-	pub fn with<C, R>(&self, f: impl FnOnce(&C) -> R) -> R
+	fn with<C, R>(&self, f: impl FnOnce(&C::Value) -> R) -> R
 	where
 		C: Component + 'static,
 	{
-		self.system.entity_with::<C, R>(self.id, f)
+		self.system().entity_with::<C, R>(self.id(), f)
 	}
 
 	#[inline]
-	pub fn with_or<C, R>(&self, f: impl FnOnce(&C) -> R, init: impl FnOnce() -> C) -> R
+	fn with_or<C, R>(&self, f: impl FnOnce(&C::Value) -> R, init: impl FnOnce() -> C::Value) -> R
 	where
 		C: Component + 'static,
 	{
-		self.system.entity_with_or(self.id, f, init)
+		self.system().entity_with_or::<C, _>(self.id(), f, init)
 	}
 
 	#[inline]
-	pub fn with_or_default<C, R>(&self, f: impl FnOnce(&C) -> R) -> R
+	fn with_or_default<C, R>(&self, f: impl FnOnce(&C::Value) -> R) -> R
 	where
-		C: Component + Default + 'static,
+		C: Component + 'static,
+		C::Value: Default,
 	{
-		self.system.entity_with_or_default(self.id, f)
+		self.system().entity_with_or_default::<C, _>(self.id(), f)
 	}
 
 	#[inline]
-	pub fn with_mut<C, R>(&self, f: impl FnOnce(&mut C) -> R) -> R
+	fn with_mut<C, R>(&self, f: impl FnOnce(&mut C::Value) -> R) -> R
 	where
 		C: Component + 'static,
 	{
-		self.system.entity_with_mut(self.id, f)
+		self.system().entity_with_mut::<C, _>(self.id(), f)
 	}
 
 	#[inline]
-	pub fn with_mut_or<C, R>(&self, f: impl FnOnce(&mut C) -> R, init: impl FnOnce() -> C) -> R
+	fn with_mut_or<C, R>(
+		&self,
+		f: impl FnOnce(&mut C::Value) -> R,
+		init: impl FnOnce() -> C::Value,
+	) -> R
 	where
 		C: Component + 'static,
 	{
-		self.system.entity_with_mut_or(self.id, f, init)
+		self.system().entity_with_mut_or::<C, _>(self.id(), f, init)
 	}
 
 	#[inline]
-	pub fn with_mut_or_default<C, R>(&self, f: impl FnOnce(&mut C) -> R) -> R
+	fn with_mut_or_default<C, R>(&self, f: impl FnOnce(&mut C::Value) -> R) -> R
 	where
-		C: Component + Default + 'static,
+		C: Component + 'static,
+		C::Value: Default,
 	{
-		self.system.entity_with_mut_or_default(self.id, f)
+		self
+			.system()
+			.entity_with_mut_or_default::<C, _>(self.id(), f)
 	}
 
 	#[inline]
-	pub fn try_with<C, R>(&self, f: impl FnOnce(&C) -> R) -> Result<R, SystemError>
+	fn try_with<C, R>(&self, f: impl FnOnce(&C::Value) -> R) -> Result<R, SystemError>
 	where
 		C: Component + 'static,
 	{
-		self.system.try_entity_with(self.id, f)
+		self.system().try_entity_with::<C, _>(self.id(), f)
 	}
 
 	#[inline]
-	pub fn try_with_mut<C, R>(&self, f: impl FnOnce(&mut C) -> R) -> Result<R, SystemError>
+	fn try_with_mut<C, R>(&self, f: impl FnOnce(&mut C::Value) -> R) -> Result<R, SystemError>
 	where
 		C: Component + 'static,
 	{
-		self.system.try_entity_with_mut(self.id, f)
+		self.system().try_entity_with_mut::<C, _>(self.id(), f)
 	}
 
 	#[inline]
-	pub fn cast<E>(&self) -> E
+	fn cast<E2>(&self) -> EntityRef<E2>
 	where
-		E: Entity + 'static,
+		E2: Entity + 'static,
 	{
-		self.system.entity_cast::<E>(self.id)
+		self.system().entity_cast::<E2>(self.id())
 	}
 
 	#[inline]
-	pub fn try_cast<E>(&self) -> Result<E, SystemError>
+	fn try_cast<E2>(&self) -> Result<EntityRef<E2>, SystemError>
 	where
-		E: Entity + 'static,
+		E2: Entity + 'static,
 	{
-		self.system.try_entity_cast::<E>(self.id)
+		self.system().try_entity_cast::<E2>(self.id())
 	}
 
 	#[inline]
-	pub fn is<E>(&self) -> bool
+	fn is<E2>(&self) -> bool
 	where
-		E: Entity + 'static,
+		E2: Entity + 'static,
 	{
-		self.system.entity_is::<E>(self.id)
+		self.system().entity_is::<E2>(self.id())
 	}
 
 	#[inline]
-	pub fn try_is<E>(&self) -> Result<bool, SystemError>
+	fn try_is<E2>(&self) -> Result<bool, SystemError>
 	where
-		E: Entity + 'static,
+		E2: Entity + 'static,
 	{
-		self.system.try_entity_is::<E>(self.id)
+		self.system().try_entity_is::<E2>(self.id())
 	}
 }
 
-impl Clone for EntityRef {
+impl<E> EntityRefMethods for EntityRef<E>
+where
+	E: Entity,
+{
+	fn system(&self) -> &System {
+		&self.system
+	}
+
+	fn id(&self) -> EntityId {
+		self.id
+	}
+}
+
+impl<E> Clone for EntityRef<E>
+where
+	E: Entity,
+{
 	fn clone(&self) -> Self {
 		self.system.increment_ref(self.id);
 
 		Self {
 			system: self.system.clone(),
 			id: self.id,
+			_phantom: PhantomData,
 		}
 	}
 }
 
-impl Drop for EntityRef {
+impl<E> Drop for EntityRef<E>
+where
+	E: Entity,
+{
 	fn drop(&mut self) {
 		self.system.decrement_ref(self.id);
 	}

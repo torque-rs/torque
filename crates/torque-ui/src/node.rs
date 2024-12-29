@@ -1,64 +1,45 @@
-use std::{any::TypeId, ops::Deref, sync::LazyLock};
+use torque_ecs::{Entity, EntityRef, EntityRefMethods, WeakEntityRef};
+use torque_style::{Layout, MaxSize, MinSize, Resolve, Size, Style};
 
-use torque_ecs::{Entity, EntityRef};
-use torque_style::Style;
+use crate::{layout, Element, Parent};
 
-use crate::{Element, Parent};
-
-pub trait NodeMethods {
-	fn entity_ref(&self) -> &EntityRef;
-
-	fn parent(&self) -> Parent {
-		self.entity_ref().get_or_default::<Parent>()
+pub trait NodeMethods: EntityRefMethods {
+	fn parent(&self) -> Option<WeakEntityRef<Element>> {
+		self.get_or_default::<Parent>()
 	}
 
 	fn with_style<R>(&self, f: impl FnOnce(&Style) -> R) -> R {
-		self.entity_ref().with_or_default(f)
+		self.with_or_default::<Style, _>(f)
 	}
 
 	fn with_style_mut<R>(&self, f: impl FnOnce(&mut Style) -> R) -> R {
-		self.entity_ref().with_mut_or_default(f)
+		self.with_mut_or_default::<Style, _>(f)
+	}
+
+	fn compute_layout(&self, input: layout::Input) -> layout::Output {
+		let (layout, size, min_size, max_size) = self.with_style(|style| {
+			(
+				style.get_or_default::<Layout>(),
+				style.get_or_default::<Size>(),
+				style.get_or_default::<MinSize>(),
+				style.get_or_default::<MaxSize>(),
+			)
+		});
+
+		let size = size.resolve(input.parent_size);
+		let min_size = min_size.resolve(input.parent_size);
+		let max_size = max_size.resolve(input.parent_size);
+
+		match layout {
+			Layout::Row => todo!(),
+			Layout::Column => todo!(),
+		}
+
+		layout::Output { size: todo!() }
 	}
 }
 
-#[derive(Clone)]
-pub struct Node(EntityRef);
+#[derive(Clone, Entity)]
+pub struct Node;
 
-impl NodeMethods for Node {
-	fn entity_ref(&self) -> &EntityRef {
-		&self.0
-	}
-}
-
-impl Deref for Node {
-	type Target = EntityRef;
-
-	fn deref(&self) -> &Self::Target {
-		&self.0
-	}
-}
-
-impl From<Element> for Node {
-	fn from(value: Element) -> Self {
-		Self(value.deref().clone())
-	}
-}
-
-static TYPE_ID: LazyLock<TypeId> = LazyLock::new(TypeId::of::<Node>);
-static TYPE_IDS: LazyLock<[TypeId; 1]> = LazyLock::new(|| [Node::type_id()]);
-
-impl Entity for Node {
-	const NAME: &'static str = "Node";
-
-	fn type_id() -> TypeId {
-		*TYPE_ID
-	}
-
-	fn type_ids() -> &'static [TypeId] {
-		&*TYPE_IDS
-	}
-
-	fn new(entity_ref: EntityRef) -> Self {
-		Self(entity_ref)
-	}
-}
+impl NodeMethods for EntityRef<Node> {}

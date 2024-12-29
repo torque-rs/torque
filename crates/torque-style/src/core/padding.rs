@@ -1,24 +1,9 @@
-use crate::Property;
+use torque_geometry::Rect;
 
-use super::LengthPercent;
+use crate::{LengthPercent, Property};
 
-#[derive(Clone, Copy, Debug)]
-pub struct Padding {
-	left: LengthPercent,
-	right: LengthPercent,
-	top: LengthPercent,
-	bottom: LengthPercent,
-}
+pub struct Padding;
 
-impl Property for Padding {}
-
-impl From<Padding> for taffy::Rect<taffy::LengthPercentage> {
-	fn from(value: Padding) -> Self {
-		Self {
-			left: value.left.into(),
-			right: value.right.into(),
-			top: value.top.into(),
-			bottom: value.bottom.into(),
-		}
-	}
+impl Property for Padding {
+	type Value = Rect<LengthPercent>;
 }

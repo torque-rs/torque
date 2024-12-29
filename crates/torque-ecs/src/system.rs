@@ -38,17 +38,17 @@ pub struct Inner {
 }
 
 impl Inner {
-	pub fn create<T>(self: &Arc<Self>) -> T
+	pub fn create<E>(self: &Arc<Self>) -> EntityRef<E>
 	where
-		T: Entity + 'static,
+		E: Entity + 'static,
 	{
-		let entity_id = self.ref_counts.lock().unwrap().insert(AtomicUsize::new(1));
+		let entity_id = self.ref_counts.lock().unwrap().insert(AtomicUsize::new(0));
 
 		self
 			.type_ids
 			.lock()
 			.unwrap()
-			.insert(entity_id, T::type_ids());
+			.insert(entity_id, E::type_ids());
 
 		self
 			.components
@@ -56,20 +56,32 @@ impl Inner {
 			.unwrap()
 			.insert(entity_id, HashMap::default());
 
-		T::new(EntityRef::new(System(self.clone()), entity_id))
+		EntityRef::new(System(self.clone()), entity_id)
 	}
 
-	pub fn entity_set<C>(self: &Arc<Self>, entity_id: EntityId, value: C)
+	pub fn get<E>(self: &Arc<Self>, entity_id: EntityId) -> Option<EntityRef<E>>
+	where
+		E: Entity + 'static,
+	{
+		let type_id = TypeId::of::<E>();
+
+		self.type_ids.lock().unwrap().get(entity_id).and_then(|v| {
+			v.contains(&type_id)
+				.then(|| EntityRef::new(System(self.clone()), entity_id))
+		})
+	}
+
+	pub fn entity_set<C>(self: &Arc<Self>, entity_id: EntityId, value: C::Value)
 	where
 		C: Component + 'static,
 	{
-		self.try_entity_set(entity_id, value).unwrap()
+		self.try_entity_set::<C>(entity_id, value).unwrap()
 	}
 
 	pub fn try_entity_set<C>(
 		self: &Arc<Self>,
 		entity_id: EntityId,
-		value: C,
+		value: C::Value,
 	) -> Result<(), SystemError>
 	where
 		C: Component + 'static,
@@ -88,44 +100,49 @@ impl Inner {
 	}
 
 	#[inline]
-	pub fn entity_with<C, R>(self: &Arc<Self>, entity_id: EntityId, f: impl FnOnce(&C) -> R) -> R
+	pub fn entity_with<C, R>(
+		self: &Arc<Self>,
+		entity_id: EntityId,
+		f: impl FnOnce(&C::Value) -> R,
+	) -> R
 	where
 		C: Component + 'static,
 	{
-		self.try_entity_with(entity_id, f).unwrap()
+		self.try_entity_with::<C, _>(entity_id, f).unwrap()
 	}
 
 	#[inline]
 	pub fn entity_with_or<C, R>(
 		self: &Arc<Self>,
 		entity_id: EntityId,
-		f: impl FnOnce(&C) -> R,
-		init: impl FnOnce() -> C,
+		f: impl FnOnce(&C::Value) -> R,
+		init: impl FnOnce() -> C::Value,
 	) -> R
 	where
 		C: Component + 'static,
 	{
-		self.try_entity_with_or(entity_id, f, init).unwrap()
+		self.try_entity_with_or::<C, _>(entity_id, f, init).unwrap()
 	}
 
 	#[inline]
 	pub fn entity_with_or_default<C, R>(
 		self: &Arc<Self>,
 		entity_id: EntityId,
-		f: impl FnOnce(&C) -> R,
+		f: impl FnOnce(&C::Value) -> R,
 	) -> R
 	where
-		C: Component + Default + 'static,
+		C: Component + 'static,
+		C::Value: Default,
 	{
 		self
-			.try_entity_with_or(entity_id, f, <C as Default>::default)
+			.try_entity_with_or::<C, _>(entity_id, f, <C::Value as Default>::default)
 			.unwrap()
 	}
 
 	pub fn try_entity_with<C, R>(
 		self: &Arc<Self>,
 		entity_id: EntityId,
-		f: impl FnOnce(&C) -> R,
+		f: impl FnOnce(&C::Value) -> R,
 	) -> Result<R, SystemError>
 	where
 		C: Component + 'static,
@@ -140,7 +157,7 @@ impl Inner {
 			.ok_or(SystemError::EntityNotFound(entity_id))?
 			.get(&type_id)
 			.ok_or(SystemError::ComponentNotFound(entity_id, C::NAME))?
-			.downcast_ref::<C>()
+			.downcast_ref::<C::Value>()
 			.unwrap_or_else(|| {
 				panic!(
 					"component {} is of invalid type for entity {}",
@@ -153,8 +170,8 @@ impl Inner {
 	pub fn try_entity_with_or<C, R>(
 		self: &Arc<Self>,
 		entity_id: EntityId,
-		f: impl FnOnce(&C) -> R,
-		init: impl FnOnce() -> C,
+		f: impl FnOnce(&C::Value) -> R,
+		init: impl FnOnce() -> C::Value,
 	) -> Result<R, SystemError>
 	where
 		C: Component + 'static,
@@ -169,7 +186,7 @@ impl Inner {
 			.ok_or(SystemError::EntityNotFound(entity_id))?
 			.entry(type_id)
 			.or_insert_with(|| Box::new(init()) as Box<dyn Any>)
-			.downcast_ref::<C>()
+			.downcast_ref::<C::Value>()
 			.unwrap_or_else(|| {
 				panic!(
 					"component {} is of invalid type for entity {}",
@@ -183,55 +200,61 @@ impl Inner {
 	pub fn try_entity_with_or_default<C, R>(
 		self: &Arc<Self>,
 		entity_id: EntityId,
-		f: impl FnOnce(&C) -> R,
+		f: impl FnOnce(&C::Value) -> R,
 	) -> Result<R, SystemError>
 	where
-		C: Component + Default + 'static,
+		C: Component + 'static,
+		C::Value: Default,
 	{
-		self.try_entity_with_or(entity_id, f, <C as Default>::default)
+		self.try_entity_with_or::<C, _>(entity_id, f, <C::Value as Default>::default)
 	}
 
 	#[inline]
 	pub fn entity_with_mut<C, R>(
 		self: &Arc<Self>,
 		entity_id: EntityId,
-		f: impl FnOnce(&mut C) -> R,
+		f: impl FnOnce(&mut C::Value) -> R,
 	) -> R
 	where
 		C: Component + 'static,
 	{
-		self.try_entity_with_mut(entity_id, f).unwrap()
+		self.try_entity_with_mut::<C, _>(entity_id, f).unwrap()
 	}
 
 	#[inline]
 	pub fn entity_with_mut_or<C, R>(
 		self: &Arc<Self>,
 		entity_id: EntityId,
-		f: impl FnOnce(&mut C) -> R,
-		init: impl FnOnce() -> C,
+		f: impl FnOnce(&mut C::Value) -> R,
+		init: impl FnOnce() -> C::Value,
 	) -> R
 	where
 		C: Component + 'static,
 	{
-		self.try_entity_with_mut_or(entity_id, f, init).unwrap()
+		self
+			.try_entity_with_mut_or::<C, _>(entity_id, f, init)
+			.unwrap()
 	}
 
 	#[inline]
 	pub fn entity_with_mut_or_default<C, R>(
 		self: &Arc<Self>,
 		entity_id: EntityId,
-		f: impl FnOnce(&mut C) -> R,
+		f: impl FnOnce(&mut C::Value) -> R,
 	) -> R
 	where
-		C: Component + Default + 'static,
+		C: Component + 'static,
+		C::Value: Default,
 	{
-		self.try_entity_with_mut_or_default(entity_id, f).unwrap()
+		self
+			.try_entity_with_mut_or_default::<C, _>(entity_id, f)
+			.unwrap()
 	}
 
 	pub fn try_entity_with_mut<C, R>(
 		self: &Arc<Self>,
 		entity_id: EntityId,
-		f: impl FnOnce(&mut C) -> R,
+		f: impl FnOnce(&mut C::Value) -> R,
 	) -> Result<R, SystemError>
 	where
 		C: Component + 'static,
@@ -246,7 +269,7 @@ impl Inner {
 			.ok_or(SystemError::EntityNotFound(entity_id))?
 			.get_mut(&type_id)
 			.ok_or(SystemError::ComponentNotFound(entity_id, C::NAME))?
-			.downcast_mut::<C>()
+			.downcast_mut::<C::Value>()
 			.unwrap_or_else(|| {
 				panic!(
 					"component {} is of invalid type for entity {}",
@@ -259,8 +282,8 @@ impl Inner {
 	pub fn try_entity_with_mut_or<C, R>(
 		self: &Arc<Self>,
 		entity_id: EntityId,
-		f: impl FnOnce(&mut C) -> R,
-		init: impl FnOnce() -> C,
+		f: impl FnOnce(&mut C::Value) -> R,
+		init: impl FnOnce() -> C::Value,
 	) -> Result<R, SystemError>
 	where
 		C: Component + 'static,
@@ -275,7 +298,7 @@ impl Inner {
 			.ok_or(SystemError::EntityNotFound(entity_id))?
 			.entry(type_id)
 			.or_insert_with(|| Box::new(init()) as Box<dyn Any>)
-			.downcast_mut::<C>()
+			.downcast_mut::<C::Value>()
 			.unwrap_or_else(|| {
 				panic!(
 					"component {} is of invalid type for entity {}",
@@ -289,23 +312,27 @@ impl Inner {
 	pub fn try_entity_with_mut_or_default<C, R>(
 		self: &Arc<Self>,
 		entity_id: EntityId,
-		f: impl FnOnce(&mut C) -> R,
+		f: impl FnOnce(&mut C::Value) -> R,
 	) -> Result<R, SystemError>
 	where
-		C: Component + Default + 'static,
+		C: Component + 'static,
+		C::Value: Default,
 	{
-		self.try_entity_with_mut_or(entity_id, f, <C as Default>::default)
+		self.try_entity_with_mut_or::<C, _>(entity_id, f, <C::Value as Default>::default)
 	}
 
 	#[inline]
-	pub fn entity_cast<E>(self: &Arc<Self>, entity_id: EntityId) -> E
+	pub fn entity_cast<E>(self: &Arc<Self>, entity_id: EntityId) -> EntityRef<E>
 	where
 		E: Entity + 'static,
 	{
 		self.try_entity_cast::<E>(entity_id).unwrap()
 	}
 
-	pub(crate) fn try_entity_cast<E>(self: &Arc<Self>, entity_id: EntityId) -> Result<E, SystemError>
+	pub(crate) fn try_entity_cast<E>(
+		self: &Arc<Self>,
+		entity_id: EntityId,
+	) -> Result<EntityRef<E>, SystemError>
 	where
 		E: Entity + 'static,
 	{
@@ -321,10 +348,7 @@ impl Inner {
 
 		for target_type_id in type_ids {
 			if target_type_id == &type_id {
-				return Ok(E::new(crate::EntityRef::new(
-					System(self.clone()),
-					entity_id,
-				)));
+				return Ok(EntityRef::new(System(self.clone()), entity_id));
 			}
 		}
 
@@ -374,7 +398,7 @@ impl Inner {
 	pub(crate) fn decrement_ref(self: &Arc<Self>, entity_id: EntityId) {
 		log::trace!("decrement_ref: {}", entity_id);
 
-		let mut ref_counts = self.ref_counts.lock().unwrap();
+		let ref_counts = self.ref_counts.lock().unwrap();
 		let ref_count = ref_counts
 			.get(entity_id)
 			.expect("increment_ref should be called before decrement_ref");

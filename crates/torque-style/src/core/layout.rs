@@ -3,9 +3,10 @@ use crate::Property;
 #[derive(Clone, Copy, Debug, Default)]
 pub enum Layout {
 	#[default]
-	Block,
-	Grid,
-	FlexBox,
+	Row,
+	Column,
 }
 
-impl Property for Layout {}
+impl Property for Layout {
+	type Value = Self;
+}

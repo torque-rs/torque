@@ -3,6 +3,8 @@ use std::{fmt, ops::Deref};
 use futures::channel::oneshot::Canceled;
 use m8::{throw_error, with_scope, TryFromV8, V8Type, V8TypeGarbageCollected, V8TypeInfo};
 use serde_v8::to_v8;
+use torque_ecs::{Component, System};
+use torque_ui::Element;
 use winit::{
 	error::OsError,
 	window::{WindowAttributes, WindowId},
@@ -115,6 +117,7 @@ impl Window {
 					surface_config,
 					device,
 					queue,
+					system: System::default(),
 				},
 			)
 		});
@@ -142,6 +145,7 @@ pub struct Inner {
 	surface_config: wgpu::SurfaceConfiguration,
 	device: wgpu::Device,
 	queue: wgpu::Queue,
+	system: System,
 }
 
 impl Inner {
@@ -163,6 +167,14 @@ impl Inner {
 
 	pub fn set_visible(&self, visible: bool) {
 		self.window.set_visible(visible);
+	}
+
+	pub fn create_element(&self) -> Element {
+		let element = self.system.create::<Element>();
+
+		//element.set::<Window>(self.clone());
+
+		element
 	}
 }
 
@@ -349,6 +361,26 @@ impl Window {
 		let title = args.get(0).to_string(scope).unwrap();
 
 		this.set_title(title.to_rust_string_lossy(scope));
+	}
+
+	fn __v8_create_element(
+		scope: &mut v8::HandleScope,
+		args: v8::FunctionCallbackArguments,
+		mut _rv: v8::ReturnValue,
+	) {
+		let this: v8::cppgc::Ptr<Inner> =
+			match <v8::cppgc::Ptr<Inner> as TryFromV8>::try_from_v8(scope, args.this().into()) {
+				Ok(value) => value,
+				Err(error) => {
+					println!("{:?}", error);
+
+					throw_error!(scope, &format!("{}", error));
+
+					return;
+				}
+			};
+
+		let element = this.createElement();
 	}
 }
 

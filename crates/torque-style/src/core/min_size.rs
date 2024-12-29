@@ -1,20 +1,9 @@
-use crate::Property;
+use torque_geometry::Size;
 
-use super::LengthPercentAuto;
+use crate::{LengthPercentAuto, Property};
 
-#[derive(Clone, Copy, Debug, Default)]
-pub struct MinSize {
-	pub width: LengthPercentAuto,
-	pub height: LengthPercentAuto,
-}
+pub struct MinSize;
 
-impl Property for MinSize {}
-
-impl From<MinSize> for taffy::Size<taffy::Dimension> {
-	fn from(value: MinSize) -> Self {
-		Self {
-			width: value.width.into(),
-			height: value.height.into(),
-		}
-	}
+impl Property for MinSize {
+	type Value = Size<LengthPercentAuto>;
 }
