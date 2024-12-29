@@ -1,0 +1,42 @@
+{
+	// Use IntelliSense to learn about possible attributes.
+	// Hover to view descriptions of existing attributes.
+	// For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"type": "lldb",
+			"request": "launch",
+			"name": "Debug executable 'helloworld'",
+			"cargo": {
+				"args": ["build", "--bin=helloworld", "--package=helloworld"],
+				"filter": {
+					"name": "helloworld",
+					"kind": "bin"
+				}
+			},
+			"env": {
+				"RUST_LOG": "trace"
+			},
+			"args": [],
+			"cwd": "${workspaceFolder}/examples/helloworld"
+		},
+		{
+			"type": "lldb",
+			"request": "launch",
+			"name": "Debug executable 'tree'",
+			"cargo": {
+				"args": ["build", "--bin=tree", "--package=tree"],
+				"filter": {
+					"name": "tree",
+					"kind": "bin"
+				}
+			},
+			"env": {
+				"RUST_LOG": "trace"
+			},
+			"args": [],
+			"cwd": "${workspaceFolder}/examples/tree"
+		}
+	]
+}

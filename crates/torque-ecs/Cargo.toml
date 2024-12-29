@@ -1,0 +1,16 @@
+[package]
+edition = "2021"
+name = "torque-ecs"
+version = "0.1.0"
+
+[dependencies]
+dyncast = "0.1.0"
+fnv = "1.0.7"
+log = "0.4.22"
+m8 = { version = "0.1.0", path = "../m8" }
+slotmap = "1.0.7"
+thiserror = "2.0.9"
+v8.workspace = true
+
+[dev-dependencies]
+test-log = "0.2.16"

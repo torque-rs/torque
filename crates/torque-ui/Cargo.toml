@@ -1,0 +1,14 @@
+[package]
+edition = "2021"
+name = "torque-ui"
+version = "0.1.0"
+
+[dependencies]
+dyncast = "0.1.0"
+log = "0.4.22"
+slotmap = "1.0.7"
+torque-ecs = { version = "0.1.0", path = "../torque-ecs" }
+torque-style = { version = "0.1.0", path = "../torque-style" }
+
+[dev-dependencies]
+test-log = "0.2.16"

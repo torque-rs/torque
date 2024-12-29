@@ -1,0 +1,13 @@
+[workspace]
+members = ["crates/*", "examples/*"]
+
+resolver = "2"
+
+[profile.dev]
+incremental = false
+
+[profile.release]
+codegen-units = 1
+
+[workspace.dependencies]
+v8 = { version = "130.0.2" }

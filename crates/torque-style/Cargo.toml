@@ -1,0 +1,9 @@
+[package]
+name = "torque-style"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+fnv = "1.0.7"
+taffy = { version = "0.7.1", default-features = false, features = ["alloc", "std", "block_layout", "content_size", "flexbox", "grid"] }
+torque-ecs = { version = "0.1.0", path = "../torque-ecs" }

@@ -1,0 +1,14 @@
+[package]
+edition = "2021"
+name = "m8"
+version = "0.1.0"
+
+[dependencies]
+futures = "0.3.31"
+inventory = "0.3.16"
+m8-macros = { version = "0.1.0", path = "../m8-macros" }
+scoped_thread_local = "1.0.0"
+serde = "1.0.216"
+serde_v8 = "0.236.0"
+thiserror = "2.0.9"
+v8.workspace = true

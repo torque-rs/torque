@@ -1,0 +1,12 @@
+{
+	"name": "torque-rs",
+	"packageManager": "yarn@4.5.3",
+	"private": true,
+	"workspaces": [
+		"packages/**/*",
+		"examples/*"
+	],
+	"dependencies": {
+		"typescript": "^5.7.2"
+	}
+}

@@ -1,0 +1,9 @@
+[package]
+edition = "2021"
+name = "class"
+version = "0.1.0"
+
+[dependencies]
+m8 = { version = "0.1.0", path = "../../crates/m8" }
+torque = { version = "0.1.0", path = "../../crates/torque" }
+v8 = "130.0.2"

@@ -1,0 +1,28 @@
+[package]
+edition = "2021"
+name = "torque"
+version = "0.1.0"
+
+[dependencies]
+anyhow = { version = "1.0.94", features = ["backtrace"] }
+cosmic-text = "0.12.1"
+fnv = "1.0.7"
+futures = { version = "0.3.31", features = ["executor"] }
+log = "0.4.22"
+m8 = { version = "0.1.0", path = "../m8" }
+paste = "1.0.15"
+scoped-tls-hkt = "0.1.5"
+serde = "1.0.216"
+serde_v8 = "0.236.0"
+slotmap = "1.0.7"
+swc = { version = "9.0.1" }
+swc_common = { version = "5.0.0", features = ["tty-emitter", "sourcemap"] }
+swc_config = "1.0.0"
+swc_core = { version = "9.0.2", features = ["ecma_ast"] }
+swc_ecma_parser = "6.0.1"
+swc_ecma_transforms_react = "6.0.0"
+taffy = "0.7.1"
+thiserror = "2.0.8"
+v8.workspace = true
+wgpu = "23.0.1"
+winit = "0.30.5"
