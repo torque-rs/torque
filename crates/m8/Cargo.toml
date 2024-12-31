@@ -11,4 +11,5 @@ scoped_thread_local = "1.0.0"
 serde = "1.0.216"
 serde_v8 = "0.236.0"
 thiserror = "2.0.9"
+tracing = { version = "0.1.41", features = ["log"] }
 v8.workspace = true

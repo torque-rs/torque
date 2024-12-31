@@ -1,0 +1,11 @@
+[package]
+edition = "2021"
+name = "torque-renderer-wgpu"
+version = "0.1.0"
+
+[dependencies]
+torque-renderer = { version = "0.1.0", path = "../torque-renderer" }
+torque-runtime = { version = "0.1.0", path = "../torque-runtime" }
+tracing = { version = "0.1.41", features = ["log"] }
+wgpu = "23.0.1"
+winit = "0.30.7"

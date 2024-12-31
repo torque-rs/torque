@@ -1,17 +1,10 @@
-pub mod application;
-mod compiler;
-mod console;
-mod jsx_runtime;
-mod runtime;
-pub mod ui;
-
-pub(crate) use self::{
-	compiler::Compiler,
-	runtime::{with_event_loop, Runtime},
-};
-
-pub use self::application::{Application, Handle};
-
+pub use torque_compiler as compiler;
 pub use torque_geometry as geometry;
+pub use torque_jsx_runtime as jsx_runtime;
+pub use torque_runtime as runtime;
 pub use torque_style as style;
 pub use torque_ui as ui;
+
+pub use self::runtime::{Runtime, RuntimeError};
+
+pub use torque_runtime::main;

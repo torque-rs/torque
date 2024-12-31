@@ -11,7 +11,12 @@ m8 = { version = "0.1.0", path = "../m8" }
 slotmap = "1.0.7"
 thiserror = "2.0.9"
 torque-ecs-macros = { version = "0.1.0", path = "../torque-ecs-macros" }
-v8.workspace = true
+tracing = { version = "0.1.41", features = ["log"] }
+v8 = { workspace = true, optional = true }
 
 [dev-dependencies]
 test-log = "0.2.16"
+
+[features]
+default = []
+v8 = ["dep:v8"]

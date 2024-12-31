@@ -23,10 +23,22 @@ swc_ecma_parser = "6.0.1"
 swc_ecma_transforms_react = "6.0.0"
 taffy = "0.7.1"
 thiserror = "2.0.8"
+torque-compiler = { version = "0.1.0", path = "../torque-compiler" }
 torque-ecs = { version = "0.1.0", path = "../torque-ecs" }
 torque-geometry = { version = "0.1.0", path = "../torque-geometry" }
+torque-jsx-runtime = { version = "0.1.0", path = "../torque-jsx-runtime" }
+torque-runtime = { version = "0.1.0", path = "../torque-runtime" }
 torque-style = { version = "0.1.0", path = "../torque-style" }
 torque-ui = { version = "0.1.0", path = "../torque-ui" }
+tracing = { version = "0.1.41", features = ["log"], optional = true }
+tracing-subscriber = { version = "0.3.19", optional = true }
 v8.workspace = true
 wgpu = "23.0.1"
 winit = "0.30.5"
+
+[features]
+default = []
+tracing-subscriber = [
+	"dep:tracing-subscriber",
+	"torque-runtime/tracing-subscriber",
+]

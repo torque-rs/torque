@@ -1,19 +1,16 @@
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
-use syn::{parse_quote, Ident, ItemStruct, Type};
+use syn::{parse_quote, ItemStruct, Type};
 
 pub fn derive(tokens: TokenStream) -> syn::Result<TokenStream> {
 	let item_struct: ItemStruct = syn::parse2(tokens)?;
 	let ident = &item_struct.ident;
 	let name = ident.to_string();
-	let mut has_base = false;
 	let base_type = if let Some(extends) = item_struct
 		.attrs
 		.iter()
 		.find(|v| v.path().is_ident("extends"))
 	{
-		has_base = true;
-
 		extends.parse_args::<Type>()?
 	} else {
 		parse_quote! { () }

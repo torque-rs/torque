@@ -1,6 +1,6 @@
 use std::marker::PhantomData;
 
-use crate::{Entity, EntityId, EntityMethods, Extends, System, WeakEntityRef};
+use crate::{Entity, EntityId, EntityMethods, System};
 
 #[derive(Debug)]
 pub struct EntityRef<E>
@@ -61,5 +61,17 @@ where
 {
 	fn drop(&mut self) {
 		self.system.decrement_ref(self.id);
+	}
+}
+
+#[cfg(feature = "v8")]
+impl<E> v8::cppgc::GarbageCollected for EntityRef<E>
+where
+	E: Entity + 'static,
+{
+	fn trace(&self, _visitor: &v8::cppgc::Visitor) {}
+
+	fn get_name(&self) -> Option<&'static std::ffi::CStr> {
+		None
 	}
 }

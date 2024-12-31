@@ -1,0 +1,17 @@
+[package]
+name = "torque-compiler"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+fnv = "1.0.7"
+m8 = { version = "0.1.0", path = "../m8" }
+swc = "9.0.1"
+swc_common = { version = "5.0.0", features = ["tty-emitter", "sourcemap"] }
+swc_config = "1.0.0"
+swc_core = { version = "9.0.3", features = ["ecma_ast"] }
+swc_ecma_parser = "6.0.1"
+swc_ecma_transforms_react = "6.0.0"
+thiserror = "2.0.9"
+tracing = { version = "0.1.41", features = ["log"] }
+v8.workspace = true

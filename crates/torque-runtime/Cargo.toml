@@ -1,0 +1,22 @@
+[package]
+edition = "2021"
+name = "torque-runtime"
+version = "0.1.0"
+
+[dependencies]
+fnv = "1.0.7"
+futures = "0.3.31"
+m8 = { version = "0.1.0", path = "../m8" }
+scoped-tls-hkt = "0.1.5"
+serde = "1.0.217"
+thiserror = "2.0.9"
+torque-compiler = { version = "0.1.0", path = "../torque-compiler" }
+torque-ecs = { version = "0.1.0", path = "../torque-ecs", features = ["v8"] }
+torque-runtime-macros = { version = "0.1.0", path = "../torque-runtime-macros" }
+tracing = { version = "0.1.41", features = ["log"] }
+tracing-subscriber = { version = "0.3.19", optional = true }
+v8.workspace = true
+winit = "0.30.7"
+
+[features]
+tracing-subscriber = ["dep:tracing-subscriber"]

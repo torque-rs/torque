@@ -1,0 +1,8 @@
+[package]
+name = "torque-jsx-runtime"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+m8 = { version = "0.1.0", path = "../m8" }
+v8.workspace = true

@@ -2,7 +2,6 @@ use std::marker::PhantomData;
 
 use crate::{Entity, EntityId, EntityRef, System};
 
-#[derive(Clone)]
 pub struct WeakEntityRef<E>
 where
 	E: Entity,
@@ -10,6 +9,19 @@ where
 	system: System,
 	id: EntityId,
 	_phantom: PhantomData<E>,
+}
+
+impl<E> Clone for WeakEntityRef<E>
+where
+	E: Entity,
+{
+	fn clone(&self) -> Self {
+		Self {
+			system: self.system.clone(),
+			id: self.id,
+			_phantom: PhantomData,
+		}
+	}
 }
 
 impl<E> WeakEntityRef<E>

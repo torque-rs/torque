@@ -42,7 +42,11 @@ where
 	}
 }
 
-#[derive(Clone, Entity)]
+#[derive(Entity)]
 pub struct Node;
+
+impl Node {
+	pub(crate) fn __m8_init(scope: &mut v8::HandleScope, module: &v8::Local<v8::Module>) {}
+}
 
 impl NodeMethods<Node> for EntityRef<Node> {}

@@ -14,7 +14,7 @@ struct TestEntity2;
 #[derive(Clone, Entity)]
 struct TestEntity3;
 
-struct TestComponent(usize);
+struct TestComponent(#[allow(dead_code)] usize);
 
 impl Component for TestComponent {
 	const NAME: &str = "TestComponent";
@@ -45,5 +45,5 @@ fn entity_cast() {
 	let entity = system.create::<TestEntity2>();
 
 	let entity: EntityRef<TestEntity> = entity.upcast::<TestEntity>();
-	let entity = entity.downcast::<TestEntity2>();
+	entity.downcast::<TestEntity2>();
 }

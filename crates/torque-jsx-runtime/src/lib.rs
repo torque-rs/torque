@@ -1,5 +1,3 @@
-use crate::Compiler;
-
 fn create_element(
 	scope: &mut v8::HandleScope,
 	args: v8::FunctionCallbackArguments,
@@ -60,7 +58,7 @@ fn create_fragment(
 	println!("createFragment");
 }
 
-pub fn init(scope: &mut v8::HandleScope) {
+pub fn __m8_init(scope: &mut v8::HandleScope) {
 	let specifier = "@torque-rs/jsx-runtime";
 
 	let module_name = v8::String::new(scope, specifier).unwrap();
@@ -71,12 +69,6 @@ pub fn init(scope: &mut v8::HandleScope) {
 	];
 
 	let module = v8::Module::create_synthetic_module(scope, module_name, &export_names, evaluate);
-	let module = v8::Global::new(scope, module);
-	let context = scope.get_current_context();
-
-	let compiler = context.get_slot::<Compiler>().expect("current context");
-
-	compiler.add_module(specifier.into(), module);
 }
 
 fn evaluate<'a>(
@@ -108,4 +100,13 @@ fn evaluate<'a>(
 	let value = v8::Boolean::new(scope, true).into();
 
 	Some(scope.escape(value))
+}
+
+m8::module! {
+	name: "@torque-rs/jsx-runtime",
+	exports: [
+		fn create_element as jsx,
+		fn create_element as jsxs,
+		fn create_fragment as Fragment
+	]
 }

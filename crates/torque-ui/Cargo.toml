@@ -7,10 +7,13 @@ version = "0.1.0"
 dyncast = "0.1.0"
 log = "0.4.22"
 m8 = { version = "0.1.0", path = "../m8" }
+serde = "1.0.217"
 slotmap = "1.0.7"
-torque-ecs = { version = "0.1.0", path = "../torque-ecs" }
+thiserror = "2.0.9"
+torque-ecs = { version = "0.1.0", path = "../torque-ecs", features = ["v8"] }
 torque-geometry = { version = "0.1.0", path = "../torque-geometry" }
 torque-style = { version = "0.1.0", path = "../torque-style" }
+tracing = { version = "0.1.41", features = ["log"] }
 v8.workspace = true
 wgpu = "23.0.1"
 winit = "0.30.7"

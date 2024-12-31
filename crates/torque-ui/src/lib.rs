@@ -14,3 +14,11 @@ pub use self::{
 	tree::Tree,
 	window::Window,
 };
+
+m8::module! {
+	name: "@torque-rs/ui",
+	exports: [
+		Window,
+		Node,
+	]
+}

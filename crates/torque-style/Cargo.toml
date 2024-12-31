@@ -8,3 +8,4 @@ fnv = "1.0.7"
 num-traits = "0.2.19"
 torque-ecs = { version = "0.1.0", path = "../torque-ecs" }
 torque-geometry = { version = "0.1.0", path = "../torque-geometry" }
+tracing = { version = "0.1.41", features = ["log"] }

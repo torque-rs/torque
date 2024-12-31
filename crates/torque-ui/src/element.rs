@@ -52,7 +52,7 @@ where
 	}
 }
 
-#[derive(Clone, Entity)]
+#[derive(Entity)]
 #[extends(Node)]
 pub struct Element;
 

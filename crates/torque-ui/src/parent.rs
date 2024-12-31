@@ -2,7 +2,7 @@ use torque_ecs::{Component, WeakEntityRef};
 
 use crate::Element;
 
-#[derive(Clone, Default)]
+#[derive(Default)]
 pub struct Parent;
 
 impl Component for Parent {

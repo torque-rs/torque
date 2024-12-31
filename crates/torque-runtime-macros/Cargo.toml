@@ -1,0 +1,13 @@
+[package]
+edition = "2021"
+name = "torque-runtime-macros"
+version = "0.1.0"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+proc-macro-crate = "3.2.0"
+proc-macro2 = { version = "1.0.92", features = ["span-locations"] }
+quote = "1.0.38"
+syn = "2.0.93"

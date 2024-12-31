@@ -1,15 +1,18 @@
 use std::{cell::RefCell, fmt::Debug, ops::Deref, path::PathBuf, rc::Rc, sync::Arc};
 
 use fnv::FnvHashMap;
-use log::trace;
+use m8::try_with_scope;
 use swc::config::{Config, JscConfig, Options, TransformConfig};
 use swc_common::{errors::Handler, FilePathMapping, SourceMap, GLOBALS};
 use swc_core::ecma::ast::EsVersion;
 use swc_ecma_parser::{Syntax, TsSyntax};
 use swc_ecma_transforms_react::Runtime;
+use tracing::trace;
 use v8::script_compiler::compile_module;
 
-#[derive(Clone)]
+use crate::CompileError;
+
+#[derive(Clone, Debug)]
 pub struct Compiler(Rc<Inner>);
 
 impl Compiler {
@@ -93,31 +96,25 @@ impl Inner {
 		modules.insert(specifier, module);
 	}
 
-	pub fn get_module<'s>(
-		self: &Rc<Self>,
-		scope: &mut v8::HandleScope<'s, v8::Context>,
-		specifier: &str,
-	) -> Option<v8::Local<'s, v8::Module>> {
+	pub fn get_module(self: &Rc<Self>, specifier: &str) -> Option<v8::Global<v8::Module>> {
 		let modules = self.modules.borrow();
 
 		trace!("getting module {}", specifier);
 
 		modules
 			.get(specifier)
-			.map(|v| v8::Local::new(scope, v))
+			.cloned()
 			.inspect(|_| trace!("success"))
 	}
 
-	//#[instrument(skip(self, scope))]
-	pub fn load_module<'s>(
+	pub fn load_module(
 		self: &Rc<Self>,
-		scope: &mut v8::HandleScope<'s, v8::Context>,
 		specifier: Option<String>,
 		path: Option<PathBuf>,
-	) -> Option<v8::Local<'s, v8::Module>> {
+	) -> Result<v8::Global<v8::Module>, CompileError> {
 		// TODO: resolve specifier to source_path
-		let (source_path, specifier) = match (specifier, path) {
-			(None, None) => None?,
+		let (source_path, specifier) = match (&specifier, path.clone()) {
+			(None, None) => None.ok_or(CompileError::ModuleNotResolved { specifier })?,
 			(None, Some(path)) => (path, None),
 			(Some(specifier), None) => (PathBuf::from(&specifier), Some(specifier)),
 			(Some(specifier), Some(path)) => (path, Some(specifier)),
@@ -125,72 +122,89 @@ impl Inner {
 
 		println!("loading: {}", source_path.to_string_lossy());
 
-		let source_file = self.source_map.load_file(&source_path).unwrap();
+		let source_file = self.source_map.load_file(&source_path)?;
 
-		let output = GLOBALS
-			.set(&Default::default(), || {
-				self.compiler.process_js_file(
-					source_file,
-					&Handler::with_tty_emitter(
-						swc_common::errors::ColorConfig::Auto,
-						true,
-						true,
-						Some(self.source_map.clone()),
-					),
-					&self.options,
-				)
-			})
-			.map_err(|error| {
-				let message = v8::String::new(scope, &error.to_string()).unwrap();
-				let exception = v8::Exception::error(scope, message);
-				scope.throw_exception(exception);
-			})
-			.ok()?;
+		try_with_scope(move |scope| {
+			let scope = &mut v8::TryCatch::new(scope);
 
-		let code = v8::String::new(scope, &output.code).unwrap();
-		println!("javascript code: {}", code.to_rust_string_lossy(scope));
-
-		let resource_name = v8::String::new(scope, &source_path.to_string_lossy())
-			.unwrap()
-			.into();
-		let script_origin = v8::ScriptOrigin::new(
-			scope,
-			resource_name,
-			0,
-			0,
-			false,
-			0,
-			None,
-			false,
-			false,
-			true,
-			None,
-		);
-
-		let module = compile_module(
-			scope,
-			&mut v8::script_compiler::Source::new(code, Some(&script_origin)),
-		)?;
-
-		module
-			.instantiate_module(scope, resolve_callback)
-			.and_then(|v| {
-				v.then(|| {
-					let scope = &mut v8::TryCatch::new(scope);
-
-					if let Some(specifier) = specifier {
-						self.add_module(specifier, v8::Global::new(scope, module));
-					}
-
-					let _ = module.evaluate(scope);
-
-					if let Some(exception) = scope.exception() {
-						panic!("{}", exception.to_rust_string_lossy(scope));
-					}
-
-					module
+			let output = GLOBALS
+				.set(&Default::default(), || {
+					self.compiler.process_js_file(
+						source_file,
+						&Handler::with_tty_emitter(
+							swc_common::errors::ColorConfig::Auto,
+							true,
+							true,
+							Some(self.source_map.clone()),
+						),
+						&self.options,
+					)
 				})
-			})
+				.map_err(|error| CompileError::ModuleNotTransformed {
+					specifier: specifier.cloned(),
+					path: source_path.clone(),
+					error: error.into(),
+				})?;
+
+			let code = v8::String::new(scope, &output.code).unwrap();
+
+			let resource_name = v8::String::new(scope, &source_path.to_string_lossy())
+				.unwrap()
+				.into();
+			let script_origin = v8::ScriptOrigin::new(
+				scope,
+				resource_name,
+				0,
+				0,
+				false,
+				0,
+				None,
+				false,
+				false,
+				true,
+				None,
+			);
+
+			let module = compile_module(
+				scope,
+				&mut v8::script_compiler::Source::new(code, Some(&script_origin)),
+			)
+			.ok_or(CompileError::ModuleNotCompiled {
+				specifier: specifier.cloned(),
+				path: source_path.clone(),
+			})?;
+
+			let module = module
+				.instantiate_module(scope, resolve_callback)
+				.ok_or(CompileError::ModuleNotInstantiated {
+					specifier: specifier.cloned(),
+					path: source_path.clone(),
+				})
+				.and_then(|instantiated| {
+					instantiated
+						.then(|| {
+							let scope = &mut v8::TryCatch::new(scope);
+
+							if let Some(specifier) = specifier {
+								self.add_module(specifier.clone(), v8::Global::new(scope, module));
+							}
+
+							let _ = module.evaluate(scope);
+
+							if let Some(exception) = scope.exception() {
+								panic!("{}", exception.to_rust_string_lossy(scope));
+							}
+
+							module
+						})
+						.ok_or(CompileError::ModuleNotEvaluated {
+							specifier: specifier.cloned(),
+							path: source_path.clone(),
+						})
+				})?;
+
+			Ok(v8::Global::new(scope, module))
+		})
 	}
 }
 
@@ -200,12 +214,12 @@ impl Default for Inner {
 	}
 }
 
-fn resolve_callback<'a>(
-	context: v8::Local<'a, v8::Context>,
+fn resolve_callback<'s>(
+	context: v8::Local<'s, v8::Context>,
 	specifier: v8::Local<v8::String>,
 	_: v8::Local<v8::FixedArray>,
-	_referrer: v8::Local<'a, v8::Module>,
-) -> Option<v8::Local<'a, v8::Module>> {
+	_referrer: v8::Local<'s, v8::Module>,
+) -> Option<v8::Local<'s, v8::Module>> {
 	let scope = &mut unsafe { v8::CallbackScope::new(context) };
 	let scope = &mut v8::EscapableHandleScope::new(scope);
 	let scope = &mut v8::ContextScope::new(scope, context);
@@ -213,7 +227,21 @@ fn resolve_callback<'a>(
 	let compiler = context.get_slot::<Compiler>().expect("current context");
 
 	compiler
-		.get_module(scope, &specifier)
-		.or_else(|| compiler.load_module(scope, Some(specifier), None))
-		.map(|module| scope.escape(module))
+		.get_module(&specifier)
+		.or_else(|| {
+			compiler
+				.load_module(Some(specifier), None)
+				.inspect_err(|error| {
+					let message = v8::String::new(scope, &error.to_string()).unwrap();
+					let exception = v8::Exception::error(scope, message);
+
+					scope.throw_exception(exception);
+				})
+				.ok()
+		})
+		.map(|module| {
+			let module = v8::Local::new(scope, module);
+
+			scope.escape(module)
+		})
 }
